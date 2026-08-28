@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+data/raw/*
+data/processed/*
+models/*.pkl
+.DS_Store
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/processed/history/
+!data/processed/history/*.parquet
+!models/.gitkeep

@@ -1,0 +1,46 @@
+name: Weekly FPL Data Snapshot
+
+on:
+  schedule:
+    # Every Tuesday at 10:00 UTC (after weekend fixtures + bonus points are finalized)
+    - cron: "0 10 * * 2"
+  workflow_dispatch: {}  # adds a "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write  # needed so the workflow can commit the new snapshot back
+
+jobs:
+  fetch-and-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch latest FPL data
+        run: python src/fetch_data.py
+
+      - name: Build features
+        run: python src/features.py
+
+      - name: Save dated snapshot for training history
+        run: |
+          mkdir -p data/processed/history
+          snapshot_date=$(date -u +%Y%m%d)
+          cp data/processed/player_features.parquet \
+             "data/processed/history/player_features_${snapshot_date}.parquet"
+          echo "Saved snapshot for ${snapshot_date}"
+
+      - name: Commit and push new data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: weekly FPL data snapshot [skip ci]"
+          file_pattern: "data/processed/**"
